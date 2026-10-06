@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Sistema de control de inventario y ventas para minimarket">
+    <title>MiniPOS - Control de Negocio</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>📦 MiniPOS</h1>
+            <div class="header-info">
+                <span id="currentTime"></span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-view="venta">
+                <span class="icon">🛒</span>
+                <span>Venta</span>
+            </button>
+            <button class="nav-tab" data-view="inventario">
+                <span class="icon">📋</span>
+                <span>Inventario</span>
+            </button>
+            <button class="nav-tab" data-view="reportes">
+                <span class="icon">📊</span>
+                <span>Reportes</span>
+            </button>
+            <button class="nav-tab" data-view="config">
+                <span class="icon">⚙️</span>
+                <span>Config</span>
+            </button>
+        </nav>
+
+        <!-- Vista de Venta -->
+        <div id="view-venta" class="view active">
+            <div class="scanner-container">
+                <div id="scanner-status" class="scanner-status">
+                    <button id="btn-start-scan" class="btn btn-primary btn-large">
+                        📷 Iniciar Escaneo
+                    </button>
+                </div>
+                <div id="scanner-reader" style="display:none;"></div>
+            </div>
+
+            <div class="current-sale">
+                <div class="sale-header">
+                    <h2>Venta Actual</h2>
+                    <button id="btn-clear-sale" class="btn btn-secondary btn-small">🗑️ Limpiar</button>
+                </div>
+                
+                <div class="sale-items" id="sale-items">
+                    <div class="empty-state">
+                        <p>No hay productos en la venta actual</p>
+                        <p class="text-muted">Escanea un código o busca manualmente</p>
+                    </div>
+                </div>
+
+                <div class="manual-search">
+                    <input type="text" id="manual-search" placeholder="Buscar producto manualmente..." class="input-field">
+                    <div id="search-results" class="search-results"></div>
+                </div>
+
+                <div class="sale-total">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span id="sale-subtotal">$0</span>
+                    </div>
+                    <div class="total-row total-main">
+                        <span>TOTAL:</span>
+                        <span id="sale-total">$0</span>
+                    </div>
+                </div>
+
+                <button id="btn-complete-sale" class="btn btn-success btn-large" disabled>
+                    ✓ Completar Venta
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista de Inventario -->
+        <div id="view-inventario" class="view">
+            <div class="inventory-actions">
+                <button id="btn-add-product" class="btn btn-primary">➕ Agregar Producto</button>
+                <input type="text" id="filter-inventory" placeholder="Buscar en inventario..." class="input-field">
+            </div>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-products">0</div>
+                    <div class="stat-label">Productos</div>
+                </div>
+                <div class="stat-card alert">
+                    <div class="stat-value" id="low-stock-count">0</div>
+                    <div class="stat-label">Stock Bajo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="inventory-value">$0</div>
+                    <div class="stat-label">Valor Total</div>
+                </div>
+            </div>
+
+            <div id="low-stock-alert" class="alert-banner" style="display:none;">
+                <span class="alert-icon">⚠️</span>
+                <span id="low-stock-message"></span>
+            </div>
+
+            <div id="inventory-list" class="inventory-list"></div>
+        </div>
+
+        <!-- Vista de Reportes -->
+        <div id="view-reportes" class="view">
+            <h2>📊 Reportes de Ventas</h2>
+            
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-sales-count">0</div>
+                    <div class="stat-label">Ventas Hoy</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value" id="total-sales-amount">$0</div>
+                    <div class="stat-label">Total Hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-sale">$0</div>
+                    <div class="stat-label">Promedio</div>
+                </div>
+            </div>
+
+            <div class="sales-history">
+                <h3>Historial de Ventas</h3>
+                <button id="btn-clear-history" class="btn btn-secondary btn-small">🗑️ Limpiar Historial</button>
+                <div id="sales-list" class="sales-list"></div>
+            </div>
+        </div>
+
+        <!-- Vista de Configuración -->
+        <div id="view-config" class="view">
+            <h2>⚙️ Configuración</h2>
+            
+            <div class="config-section">
+                <h3>Alertas de Inventario</h3>
+                <label class="config-label">
+                    Stock mínimo para alerta:
+                    <input type="number" id="min-stock-alert" class="input-field" value="5" min="1">
+                </label>
+            </div>
+
+            <div class="config-section">
+                <h3>Datos de la Aplicación</h3>
+                <button id="btn-export-data" class="btn btn-primary">📥 Exportar Datos</button>
+                <button id="btn-import-data" class="btn btn-secondary">📤 Importar Datos</button>
+                <input type="file" id="import-file" accept=".json" style="display:none;">
+            </div>
+
+            <div class="config-section">
+                <h3>Productos de Ejemplo</h3>
+                <button id="btn-load-sample" class="btn btn-secondary">📦 Cargar Productos de Ejemplo</button>
+                <p class="text-muted">Útil para probar la aplicación</p>
+            </div>
+
+            <div class="config-section danger">
+                <h3>Zona Peligrosa</h3>
+                <button id="btn-reset-all" class="btn btn-danger">⚠️ Resetear Todo</button>
+                <p class="text-muted">Eliminará todos los datos permanentemente</p>
+            </div>
+
+            <div class="config-section">
+                <h3>Acerca de</h3>
+                <p><strong>MiniPOS</strong> v1.0.0</p>
+                <p class="text-muted">Sistema de control de inventario y ventas para pequeños negocios</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar producto -->
+    <div id="modal-product" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Agregar Producto</h3>
+                <button class="modal-close" id="btn-close-modal">✕</button>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                
+                <label class="form-label">
+                    Código de Barras / SKU:
+                    <input type="text" id="product-code" class="input-field" required>
+                </label>
+
+                <label class="form-label">
+                    Nombre del Producto:
+                    <input type="text" id="product-name" class="input-field" required>
+                </label>
+
+                <label class="form-label">
+                    Precio Unitario ($):
+                    <input type="number" id="product-price" class="input-field" step="0.01" min="0" required>
+                </label>
+
+                <label class="form-label">
+                    Stock Actual:
+                    <input type="number" id="product-stock" class="input-field" min="0" required>
+                </label>
+
+                <label class="form-label">
+                    Categoría:
+                    <input type="text" id="product-category" class="input-field" placeholder="Ej: Bebidas, Snacks, Limpieza">
+                </label>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-product">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => console.log('Service Worker registrado', reg))
+                .catch(err => console.log('Error al registrar Service Worker', err));
+        }
+    </script>
+</body>
+</html>
